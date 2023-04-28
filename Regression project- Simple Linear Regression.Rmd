@@ -1,0 +1,94 @@
+---
+title: "Statistical Modeling and Regression Project"
+author: "Kushal"
+date: "4/27/2023"
+output: html_document
+---
+
+Reading data from january 1st 2015 until 2023-04-05. S&P 500 is considered for the whole process. I abstracted the data at a real time from yahoofinance using quantmod library..In the below code, initially we read stock data from yahoo finance calling the yahoofinance api through quantmod package and create a dataframe df.
+```{r}
+
+library(tidyverse)
+library(quantmod)
+
+begining <- as.Date("2015-01-01")
+last_date <- as.Date("2023-04-05")
+raw <- getSymbols("^GSPC", src = "yahoo", from = begining, to = last_date, auto.assign = FALSE)
+stock_date = index(raw)
+closingprice = as.numeric(raw[, "GSPC.Close"])
+df <- data.frame(stock_date, closingprice)
+```
+
+#Using Linear Regression Model
+```{r}
+linear_model <- lm(closingprice ~ stock_date, data = df)
+predict_stock <- predict(linear_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse,"\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(linear_model)
+```
+```{r}
+plot(linear_model) 
+```
+
+
+```{r}
+predict_stock <- predict(linear_model, newdata = df)
+ggplot() +
+  geom_line(data = df, aes(x = stock_date, y = closingprice), color = "yellow") +
+  geom_line(data = df, aes(x = stock_date, y = predict_stock), color = "red") +
+  labs(title = "Prediction with Simple Linear Regression", x = "Stock Date", y = "Closing Price") 
+
+```
+#Using Random Forest Regression
+```{r}
+library(randomForest)
+rand_model <- randomForest(closingprice ~ stock_date, data = df, ntree = 200, mtry = 1)
+predict_stock <- predict(rand_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse,"\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(rand_model)
+```
+```{r}
+plot(rand_model) 
+```
+
+```{r}
+
+ggplot() +
+  geom_line(data = df, aes(x = stock_date, y = closingprice), color = "blue") +
+  geom_line(data = df, aes(x = stock_date, y = predict_stock), color = "red") +
+  labs(title = "Prediction with Random Forest Regression", x = "Stock Date", y = "Closing Price") 
+
+```
+
+#Using polynomial regression
+```{r}
+date_num <- as.numeric(df$stock_date)
+poly_model <- lm(closingprice ~ poly(date_num, 2, raw = TRUE), data = df)
+predict_stock <- predict(poly_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse, "\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(poly_model)
+```
+
+```{r}
+plot(poly_model) 
+
+```
+
+```{r}
+
+ggplot() +
+  geom_line(data = df, aes(x = stock_date, y = closingprice), color = "blue") +
+  geom_line(data = df, aes(x = stock_date, y = predict_stock), color = "red") +
+  labs(title = "Prediction with Random Forest Regression", x = "Stock Date", y = "Closing Price") 
+
+```
+
